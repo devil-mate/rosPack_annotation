@@ -1,0 +1,9 @@
+/.idea
+/venv
+/openslam_gmapping/.git
+/openslam_gmapping/.gitignore
+/slam_gmapping/.git
+/slam_gmapping/.gitignore
+
+/*/.idea
+
