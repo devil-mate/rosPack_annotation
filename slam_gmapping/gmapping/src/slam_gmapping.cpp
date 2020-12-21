@@ -594,7 +594,7 @@ SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoin
   // ...but it deep copies them in RangeReading constructor, so we don't
   // need to keep our array around.
   delete[] ranges_double;
-
+ //激光雷达地图坐标（设置到reading类成员变量中，以后用getPose获取） 
   reading.setPose(gmap_pose);
 
   /*
