@@ -414,7 +414,8 @@ SlamGMapping::initMapper(const sensor_msgs::LaserScan& scan)
   ident.frame_id_ = laser_frame_;
   ident.stamp_ = scan.header.stamp;
   try
-  {
+  { 
+    //激光坐标变换到base_link坐标系，结果存放在base_frame_中。
     tf_.transformPose(base_frame_, ident, laser_pose);
   }
   catch(tf::TransformException e)
