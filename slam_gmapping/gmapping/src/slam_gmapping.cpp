@@ -410,12 +410,12 @@ SlamGMapping::initMapper(const sensor_msgs::LaserScan& scan)
   // Get the laser's pose, relative to base.
   tf::Stamped<tf::Pose> ident;
   tf::Stamped<tf::Transform> laser_pose;
-  ident.setIdentity();
+  ident.setIdentity(); //设置单位矩阵
   ident.frame_id_ = laser_frame_;
   ident.stamp_ = scan.header.stamp;
   try
   { 
-    //激光坐标变换到base_link坐标系，结果存放在base_frame_中。
+    //激光坐标变换到base_link坐标系，结果存放在laser_pose中。
     tf_.transformPose(base_frame_, ident, laser_pose);
   }
   catch(tf::TransformException e)
@@ -552,7 +552,7 @@ SlamGMapping::initMapper(const sensor_msgs::LaserScan& scan)
 bool
 SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose)
 {
-  //把激光雷达的中心坐标转换到里程计坐标？
+  //把激光雷达的中心坐标转换到里程计坐标(得到激光雷达在里程计坐标系下的位姿)
   if(!getOdomPose(gmap_pose, scan.header.stamp))
      return false;
   
@@ -626,7 +626,7 @@ SlamGMapping::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
       return;
     got_first_scan_ = true;
   }
-// 得到odom_pose，是里程计算出的在地图中的位置？
+// 得到odom_pose，是里程计算出的在地图中的位置？--激光雷达中心的里程计坐标系下的位姿。
   GMapping::OrientedPoint odom_pose;
 
   if(addScan(*scan, odom_pose))

@@ -317,13 +317,16 @@ void GridSlamProcessor::setMotionModelParameters
     
     /**retireve the position from the reading, and compute the odometry*/
     OrientedPoint relPose=reading.getPose();
+    //m_count表示这个函数被调用的次数 如果是第0次调用,则所有的位姿都是一样的
     if (!m_count){
       m_lastPartPose=m_odoPose=relPose;
     }
     
     //write the state of the reading and update all the particles using the motion model
+    //对于每一个粒子，都从里程计运动模型中采样，得到车子的初步估计位置  这一步对应于   里程计的更新
     for (ParticleVector::iterator it=m_particles.begin(); it!=m_particles.end(); it++){
       OrientedPoint& pose(it->pose);
+      //粒子位姿，里程计真实位姿，前一次位姿
       pose=m_motionModel.drawFromMotion(it->pose, relPose, m_odoPose);
     }
 
@@ -349,16 +352,26 @@ void GridSlamProcessor::setMotionModelParameters
     }
     
     //invoke the callback
+    //什么也没做？
     onOdometryUpdate();
     
 
     // accumulate the robot translation and rotation
+    /*根据两次里程计的数据 计算出来机器人的线性位移和角度位移的累积值 
+    //m_odoPose表示上一次的里程计位姿  relPose表示新的里程计的位姿*/
     OrientedPoint move=relPose-m_odoPose;
     move.theta=atan2(sin(move.theta), cos(move.theta));
+    //统计机器人在进行激光雷达更新之前 走了多远的距离 以及　平移了多少的角度
     m_linearDistance+=sqrt(move*move);
     m_angularDistance+=fabs(move.theta);
-    
+
     // if the robot jumps throw a warning
+         /*
+     * 如果机器人在走了m_distanceThresholdCheck这么远的距离都没有进行激光雷达的更新
+     * 则需要进行报警。这个误差很可能是里程计或者激光雷达的BUG造成的。
+     * 例如里程计数据出错 或者 激光雷达很久没有数据等等
+     * 每次进行激光雷达的更新之后 m_linearDistance这个参数就会清零
+     */
     if (m_linearDistance>m_distanceThresholdCheck){
       cerr << "***********************************************************************" << endl;
       cerr << "********** Error: m_distanceThresholdCheck overridden!!!! *************" << endl;
@@ -373,7 +386,7 @@ void GridSlamProcessor::setMotionModelParameters
       cerr << "** crap or can lead to a core dump since the map doesn't fit.... C&G **" << endl;
       cerr << "***********************************************************************" << endl;
     }
-    
+    //更新 把当前的位置赋值给旧的位置
     m_odoPose=relPose;
     
     bool processed=false;
