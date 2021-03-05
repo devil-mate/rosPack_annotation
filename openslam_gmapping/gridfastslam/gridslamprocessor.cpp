@@ -392,6 +392,7 @@ void GridSlamProcessor::setMotionModelParameters
     bool processed=false;
 
     // process a scan only if the robot has traveled a given distance or a certain amount of time has elapsed
+    /*只有当机器人走过一定的距离  或者 旋转过一定的角度  或者过一段指定的时间才处理激光数据*/
     if (! m_count 
 	|| m_linearDistance>=m_linearThresholdDistance 
 	|| m_angularDistance>=m_angularThresholdDistance
@@ -415,72 +416,97 @@ void GridSlamProcessor::setMotionModelParameters
       
       
       //this is for converting the reading in a scan-matcher feedable form
+       /*复制一帧数据 把激光数据转换为scan-match需要的格式*/
       assert(reading.size()==m_beams);
       double * plainReading = new double[m_beams];
       for(unsigned int i=0; i<m_beams; i++){
 	plainReading[i]=reading[i];
       }
       m_infoStream << "m_count " << m_count << endl;
-
+      //这个备份主要是用来储存的。
       RangeReading* reading_copy = 
               new RangeReading(reading.size(),
                                &(reading[0]),
                                static_cast<const RangeSensor*>(reading.getSensor()),
                                reading.getTime());
-
-      if (m_count>0){
-	scanMatch(plainReading);
-	if (m_outputStream.is_open()){
-	  m_outputStream << "LASER_READING "<< reading.size() << " ";
-	  m_outputStream << setiosflags(ios::fixed) << setprecision(2);
-	  for (RangeReading::const_iterator b=reading.begin(); b!=reading.end(); b++){
-	    m_outputStream << *b << " ";
-	  }
-	  OrientedPoint p=reading.getPose();
-	  m_outputStream << setiosflags(ios::fixed) << setprecision(6);
-	  m_outputStream << p.x << " " << p.y << " " << p.theta << " " << reading.getTime()<< endl;
-	  m_outputStream << "SM_UPDATE "<< m_particles.size() << " ";
-	  for (ParticleVector::const_iterator it=m_particles.begin(); it!=m_particles.end(); it++){
-	    const OrientedPoint& pose=it->pose;
-	    m_outputStream << setiosflags(ios::fixed) << setprecision(3) <<  pose.x << " " << pose.y << " ";
-	    m_outputStream << setiosflags(ios::fixed) << setprecision(6) <<  pose.theta << " " << it-> weight << " ";
-	  }
-	  m_outputStream << endl;
-	}
-	onScanmatchUpdate();
-	
-	updateTreeWeights(false);
-				
-	if (m_infoStream){
-	  m_infoStream << "neff= " << m_neff  << endl;
-	}
-	if (m_outputStream.is_open()){
-	  m_outputStream << setiosflags(ios::fixed) << setprecision(6);
-	  m_outputStream << "NEFF " << m_neff << endl;
-	}
- 	resample(plainReading, adaptParticles, reading_copy);
-	
-      } else {
-	m_infoStream << "Registering First Scan"<< endl;
-	for (ParticleVector::iterator it=m_particles.begin(); it!=m_particles.end(); it++){	
-	  m_matcher.invalidateActiveArea();
-	  m_matcher.computeActiveArea(it->map, it->pose, plainReading);
-	  m_matcher.registerScan(it->map, it->pose, plainReading);
-	  
-	  // cyr: not needed anymore, particles refer to the root in the beginning!
-	  TNode* node=new	TNode(it->pose, 0., it->node,  0);
-	  //node->reading=0;
-      node->reading = reading_copy;
-	  it->node=node;
-	  
-	}
+       /*如果不是第一帧数据*/
+    if (m_count>0){
+       /*
+        为每个粒子进行scanMatch，计算出来每个粒子的最优位姿，同时计算改最优位姿的得分和似然  
+        对应于gmapping论文中的用最近的一次测量计算proposal的算法，
+        这里面除了进行scanMatch之外，还对粒子进行了权重的计算，并计算了粒子的有效区域 
+        但不进行内存分配 内存分配在resample()函数中
+        这个函数在gridslamprocessor.hxx里面。
+        */
+      scanMatch(plainReading);
+      if (m_outputStream.is_open()){
+      m_outputStream << "LASER_READING "<< reading.size() << " ";
+      m_outputStream << setiosflags(ios::fixed) << setprecision(2);
+      for (RangeReading::const_iterator b=reading.begin(); b!=reading.end(); b++){
+        m_outputStream << *b << " ";
       }
+      OrientedPoint p=reading.getPose();
+      m_outputStream << setiosflags(ios::fixed) << setprecision(6);
+      m_outputStream << p.x << " " << p.y << " " << p.theta << " " << reading.getTime()<< endl;
+      m_outputStream << "SM_UPDATE "<< m_particles.size() << " ";
+      for (ParticleVector::const_iterator it=m_particles.begin(); it!=m_particles.end(); it++){
+        const OrientedPoint& pose=it->pose;
+        m_outputStream << setiosflags(ios::fixed) << setprecision(3) <<  pose.x << " " << pose.y << " ";
+        m_outputStream << setiosflags(ios::fixed) << setprecision(6) <<  pose.theta << " " << it-> weight << " ";
+      }
+      m_outputStream << endl;
+    }
+    //至此 关于proposal的更新完毕了，接下来是计算权重
+    onScanmatchUpdate();
+    /*
+            由于scanMatch中对粒子的权重进行了更新，那么这个时候各个粒子的轨迹上的累计权重都需要重新计算
+            这个函数即更新各个粒子的轨迹上的累计权重是更新
+            GridSlamProcessor::updateTreeWeights(bool weightsAlreadyNormalized) 函数在gridslamprocessor_tree.cpp里面实现
+    */
+    updateTreeWeights(false);
+
+         /*
+             * 粒子重采样  根据neff的大小来进行重采样  不但进行了重采样，也对地图进行更新
+             * GridSlamProcessor::resample 函数在gridslamprocessor.hxx里面实现
+             */     
+    if (m_infoStream){
+      m_infoStream << "neff= " << m_neff  << endl;
+    }
+    if (m_outputStream.is_open()){
+      m_outputStream << setiosflags(ios::fixed) << setprecision(6);
+      m_outputStream << "NEFF " << m_neff << endl;
+    }
+    resample(plainReading, adaptParticles, reading_copy);
+	
+    } 
+    else {
+      //如果是第一帧数据，则可以直接计算activeArea。因为这个时候，对机器人的位置是非常确定的，就是(0,0,0)
+      m_infoStream << "Registering First Scan"<< endl;
+      for (ParticleVector::iterator it=m_particles.begin(); it!=m_particles.end(); it++){	
+        m_matcher.invalidateActiveArea();
+        m_matcher.computeActiveArea(it->map, it->pose, plainReading);
+        m_matcher.registerScan(it->map, it->pose, plainReading);
+        
+        // cyr: not needed anymore, particles refer to the root in the beginning!
+        //为每个粒子创建路径的第一个节点。该节点的权重为0,父节点为it->node(这个时候为NULL)。
+        //因为第一个节点就是轨迹的根，所以没有父节点
+        TNode* node=new	TNode(it->pose, 0., it->node,  0);
+        //node->reading=0;
+          node->reading = reading_copy;
+        it->node=node;
+	  
+	    }
+    }
       //		cerr  << "Tree: normalizing, resetting and propagating weights at the end..." ;
+      //进行重采样之后，粒子的权重又会发生变化，因此需要再次更新粒子轨迹的累计权重
+      /*GridSlamProcessor::updateTreeWeights(bool weightsAlreadyNormalized) 
+      函数在gridslamprocessor_tree.cpp里面实现*/
       updateTreeWeights(false);
       //		cerr  << ".done!" <<endl;
       
       delete [] plainReading;
       m_lastPartPose=m_odoPose; //update the past pose for the next iteration
+      //机器人累计行走的多远的路程没有进行里程计的更新 每次更新完毕之后都要把这个数值清零
       m_linearDistance=0;
       m_angularDistance=0;
       m_count++;

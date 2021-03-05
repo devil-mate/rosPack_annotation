@@ -139,7 +139,7 @@ inline double ScanMatcher::icpStep(OrientedPoint & pret, const ScanMatcherMap& m
 	pret.theta=atan2(sin(pret.theta), cos(pret.theta));
 	return score(map, p, readings);
 }
-
+//optimize中的score函数，这个函数在《概率机器人》中的likehood_field_range_finder_model方法有讲：
 inline double ScanMatcher::score(const ScanMatcherMap& map, const OrientedPoint& p, const double* readings) const{
 	double s=0;
 	const double * angle=m_laserAngles+m_initialBeamsSkip;
