@@ -6,4 +6,6 @@
 /slam_gmapping/.gitignore
 
 /*/.idea
-
+/.vscode
+/*/.vscode
+/*/*/.vscode

@@ -150,10 +150,20 @@ void ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, cons
 
 
 
+/*
+@desc	根据地图、激光数据、位姿迭代求解一个最优的新的位姿出来
+这个函数是真正被调用来进行scan-match的函数
+@param	pnew		新的最优位置
+@param  map			地图
+@param	init		初始位置
+@param  readings	激光数据
+
+*/
 double ScanMatcher::optimize(OrientedPoint& pnew, const ScanMatcherMap& map, const OrientedPoint& init, const double* readings) const{
 	double bestScore=-1;
 	OrientedPoint currentPose=init;
-	double currentScore=score(map, currentPose, readings);
+    
+	double currentScore=score(map, currentPose, readings);//计算当前激光与地图匹配得分、位姿{// /*计算当前位置的得分*/}
 	double adelta=m_optAngularDelta, ldelta=m_optLinearDelta;
 	unsigned int refinement=0;
 	enum Move{Front, Back, Left, Right, TurnLeft, TurnRight, Done};
