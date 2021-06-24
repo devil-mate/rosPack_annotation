@@ -316,6 +316,7 @@ void GridSlamProcessor::setMotionModelParameters
   bool GridSlamProcessor::processScan(const RangeReading & reading, int adaptParticles){
     
     /**retireve the position from the reading, and compute the odometry*/
+    // 获取里程计坐标系的位姿（刚才通过tf获得里程计位姿，然后设置到reading类中的位姿，｛这只是函数参数传递｝）
     OrientedPoint relPose=reading.getPose();
     //m_count表示这个函数被调用的次数 如果是第0次调用,则所有的位姿都是一样的
     if (!m_count){

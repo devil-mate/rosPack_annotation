@@ -24,7 +24,9 @@ MotionModel::drawFromMotion (const OrientedPoint& p, double linearMove, double a
 OrientedPoint 
 MotionModel::drawFromMotion(const OrientedPoint& p, const OrientedPoint& pnew, const OrientedPoint& pold) const{
 	double sxy=0.3*srr;
+	//当前位置-上一时刻位置 ，得到控制量
 	OrientedPoint delta=absoluteDifference(pnew, pold);
+	// 为控制量添加噪声（高斯噪声）
 	OrientedPoint noisypoint(delta);
 	noisypoint.x+=sampleGaussian(srr*fabs(delta.x)+str*fabs(delta.theta)+sxy*fabs(delta.y));
 	noisypoint.y+=sampleGaussian(srr*fabs(delta.y)+str*fabs(delta.theta)+sxy*fabs(delta.x));
@@ -32,6 +34,7 @@ MotionModel::drawFromMotion(const OrientedPoint& p, const OrientedPoint& pnew, c
 	noisypoint.theta=fmod(noisypoint.theta, 2*M_PI);
 	if (noisypoint.theta>M_PI)
 		noisypoint.theta-=2*M_PI;
+		// 把添加了噪声的控制量附加到粒子位姿上
 	return absoluteSum(p,noisypoint);
 }
 

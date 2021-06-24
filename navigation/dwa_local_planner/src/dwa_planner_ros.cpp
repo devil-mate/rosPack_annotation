@@ -98,9 +98,11 @@ namespace dwa_local_planner {
       std::string name,
       tf2_ros::Buffer* tf,
       costmap_2d::Costmap2DROS* costmap_ros) {
+        // 返回initialized_
     if (! isInitialized()) {
 
       ros::NodeHandle private_nh("~/" + name);
+      // 发布全局路径和局部路径｛这里的全局路径和全局规划器得到的路径有什么关系｝
       g_plan_pub_ = private_nh.advertise<nav_msgs::Path>("global_plan", 1);
       l_plan_pub_ = private_nh.advertise<nav_msgs::Path>("local_plan", 1);
       tf_ = tf;
@@ -109,7 +111,7 @@ namespace dwa_local_planner {
 
       // make sure to update the costmap we'll use for this cycle
       costmap_2d::Costmap2D* costmap = costmap_ros_->getCostmap();
-
+      // 构建了规划器辅助对象planner_util，主要用于维护局部规划器的各种限制参数
       planner_util_.initialize(tf, costmap, costmap_ros_->getGlobalFrameID());
 
       //create the actual planner that we'll use.. it'll configure itself from the parameter server

@@ -20,6 +20,7 @@ inline void GridSlamProcessor::scanMatch(const double* plainReading){
     score=m_matcher.optimize(corrected, it->map, it->pose, plainReading);
     //    it->pose=corrected;
     /*矫正成功则更新位姿*/
+    // m_minimumScore 匹配度阈值，
     if (score>m_minimumScore){
         it->pose=corrected;
     } else {

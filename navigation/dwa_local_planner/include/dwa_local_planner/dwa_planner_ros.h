@@ -72,9 +72,9 @@ namespace dwa_local_planner {
 
       /**
        * @brief  Constructs the ros wrapper
-       * @param name The name to give this instance of the trajectory planner
+       * @param name The name to give this instance of the trajectory planner 局部规划器名称
        * @param tf A pointer to a transform listener
-       * @param costmap The cost map to use for assigning costs to trajectories
+       * @param costmap The cost map to use for assigning costs to trajectories 局部代价地图
        */
       void initialize(std::string name, tf2_ros::Buffer* tf,
           costmap_2d::Costmap2DROS* costmap_ros);

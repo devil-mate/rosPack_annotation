@@ -263,6 +263,18 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp)
 
     return mCurrentFrame.mTcw.clone();
 }
+//  前端相机位姿估计（求位姿）的主要逻辑
+/**
+ * 相当于Tracking线程中的主要方法
+ * track包含两部分：估计运动、跟踪局部地图
+ * tracking过程的状态机：
+ * SYSTEM_NOT_READY=-1,
+ * NO_IMAGES_YET=0,
+ * NOT_INITIALIZED=1,
+ * OK=2,
+ * LOST=3
+ * 如果图像复位过、或者第一次运行，则为NO_IMAGE_YET状态
+*/
 
 void Tracking::Track()
 {
@@ -275,7 +287,7 @@ void Tracking::Track()
 
     // Get Map Mutex -> Map cannot be changed
     unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
-
+    // 1.初始化：没有初始化的话会先进行初始化
     if(mState==NOT_INITIALIZED)
     {
         if(mSensor==System::STEREO || mSensor==System::RGBD)
@@ -289,39 +301,55 @@ void Tracking::Track()
             return;
     }
     else
-    {
-        // System is initialized. Track Frame.
+    {   
+        // System is initialized. Track Frame.//2.跟踪估计相机位姿（如果初始化完成）
         bool bOK;
 
         // Initial camera pose estimation using motion model or relocalization (if tracking is lost)
+        // 使用运动模型或者重定位来初始化相机位姿？（这里的初始化和前面if中的初始化？）
+        //在viewer中有个开关menuLocalizationMode，由它控制是否ActivateLocalizationMode，并最终管控mbOnlyTracking
+        //mbOnlyTracking等于false表示正常VO模式（有地图更新），mbOnlyTracking等于true表示用户手动选择定位模式
         if(!mbOnlyTracking)
         {
             // Local Mapping is activated. This is the normal behaviour, unless
             // you explicitly activate the "only tracking" mode.
 
-            if(mState==OK)
+            if(mState==OK) //正常初始化成功
             {
                 // Local Mapping might have changed some MapPoints tracked in last frame
+                // //检查并更新上一帧被替换的MapPoints,更新Fuse函数和SearchAndFuse函数替换的MapPoints
                 CheckReplacedInLastFrame();
-
+                // 上一帧速度为0 || 当前帧ID与重定位帧ID之间相差大于2
+                //跟踪上一帧或者参考帧或者重定位
                 if(mVelocity.empty() || mCurrentFrame.mnId<mnLastRelocFrameId+2)
                 {
+                    /**
+                     * 将上一帧的位姿作为当前帧的初始位姿,通过BoW的方式在参考帧中找当前帧特征点的匹配点,
+                     * 优化每个特征点对应3D点重投影误差即可得到当前帧的位姿
+                    */
                     bOK = TrackReferenceKeyFrame();
                 }
                 else
                 {
+                     //用上一帧匹配来预测
+                    /**
+                     * 根据恒速模型设定当前帧的初始位姿,通过投影的方式在参考帧中找当前帧特征点的匹配点,
+                     * 优化每个特征点所对应3D点的投影误差即可得到位姿
+                    */
                     bOK = TrackWithMotionModel();
                     if(!bOK)
                         bOK = TrackReferenceKeyFrame();
                 }
             }
-            else
+            else //mState!=ok,没有正常初始化？--state有多种状态（枚举）
             {
+                // 重定位,BOW搜索，PnP求解位姿
                 bOK = Relocalization();
             }
         }
-        else
+        else // mbOnlyTracking等于true表示用户手动选择定位模式
         {
+            
             // Localization Mode: Local Mapping is deactivated
 
             if(mState==LOST)
@@ -776,17 +804,35 @@ void Tracking::CheckReplacedInLastFrame()
     }
 }
 
+/**
+ * 函数功能：
+ * 1. 计算当前帧的词包，将当前帧的特征点分到特定层的nodes上
+ * 2. 对属于同一node的描述子进行匹配
+ * 3. 根据匹配对估计当前帧的姿态
+ * 4. 根据姿态剔除误匹配
+ * 具体步骤：
+ * 1. 按照关键帧进行Track的方法和运动模式恢复相机运动位姿的方法接近。首先求解当前帧的BOW向量。 
+ * 2. 再搜索当前帧和关键帧之间的关键点匹配关系，如果这个匹配关系小于15对的话，就Track失败了。 
+ * 3. 接着将当前帧的位置假定到上一帧的位置那里 
+ * 4. 并通过最小二乘法优化相机的位姿。 
+ * 5. 最后依然是抛弃无用的杂点，当match数大于等于10的时候，返回true成功。 
+*/
 
 bool Tracking::TrackReferenceKeyFrame()
 {
     // Compute Bag of Words vector
+    //步骤1：将当前帧的描述子转化为BoW向量
     mCurrentFrame.ComputeBoW();
 
     // We perform first an ORB matching with the reference keyframe
     // If enough matches are found we setup a PnP solver
+    
     ORBmatcher matcher(0.7,true);
     vector<MapPoint*> vpMapPointMatches;
-
+    
+    //步骤2：通过特征点的BoW加快当前帧与参考帧之间的特征点匹配,对上一个关键帧进行BOW搜索匹配点
+    //特征点的匹配关系由MapPoints进行维护
+    // vpMapPointMatches中存储的是当前帧特征点的index，值为mpReferenceKF参考帧中对应的MapPoint
     int nmatches = matcher.SearchByBoW(mpReferenceKF,mCurrentFrame,vpMapPointMatches);
 
     if(nmatches<15)

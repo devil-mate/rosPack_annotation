@@ -153,9 +153,9 @@ void ScanMatcher::registerScan(ScanMatcherMap& map, const OrientedPoint& p, cons
 /*
 @desc	根据地图、激光数据、位姿迭代求解一个最优的新的位姿出来
 这个函数是真正被调用来进行scan-match的函数
-@param	pnew		新的最优位置
+@param	pnew		新的最优位置(用于保存采样结果)
 @param  map			地图
-@param	init		初始位置
+@param	init		初始位置（经过运动模型采样的初始位置）
 @param  readings	激光数据
 
 */
