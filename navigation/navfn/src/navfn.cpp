@@ -825,7 +825,7 @@ namespace navfn {
           return 0;
         }
 
-        // add to path
+        // add to path 添加至路径点
         pathx[npath] = stc%nx + dx;
         pathy[npath] = stc/nx + dy;
         npath++;
@@ -843,6 +843,7 @@ namespace navfn {
         int stcpx = stc-nx;
 
         // check for potentials at eight positions near cell
+        // //检查当前到达节点的周边的8个节点是否有障碍物代价值，如果有的话，则直接将stc指向这8个节点中potential值最低的节点
         if (potarr[stc] >= POT_HIGH ||
             potarr[stc+1] >= POT_HIGH ||
             potarr[stc-1] >= POT_HIGH ||
@@ -890,6 +891,7 @@ namespace navfn {
         }
 
         // have a good gradient here
+        // 如果有好的梯度，则直接计算梯度，并沿着梯度方向查找下一个节点
         else			
         {
 

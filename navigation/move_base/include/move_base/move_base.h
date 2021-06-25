@@ -207,13 +207,19 @@ namespace move_base {
 
       ros::Time last_valid_plan_, last_valid_control_, last_oscillation_reset_;
       geometry_msgs::PoseStamped oscillation_pose_;
+<<<<<<< HEAD
       // 插件形式加载全局规划器、局部规划器、恢复规划器；ros插件形式可以动态加载C++库。
+=======
+>>>>>>> 152bb41a805979f892b420947acdbc10d7b9b45d
       pluginlib::ClassLoader<nav_core::BaseGlobalPlanner> bgp_loader_;
       pluginlib::ClassLoader<nav_core::BaseLocalPlanner> blp_loader_;
       pluginlib::ClassLoader<nav_core::RecoveryBehavior> recovery_loader_;
 
       //set up plan triple buffer
+<<<<<<< HEAD
       //路径保存；planner_plan_ 传递给latest_plan_，latest_plan_传递给controller_plan_；{全局--局部--控制？}
+=======
+>>>>>>> 152bb41a805979f892b420947acdbc10d7b9b45d
       std::vector<geometry_msgs::PoseStamped>* planner_plan_;
       std::vector<geometry_msgs::PoseStamped>* latest_plan_;
       std::vector<geometry_msgs::PoseStamped>* controller_plan_;
@@ -221,7 +227,10 @@ namespace move_base {
       //set up the planner's thread
       bool runPlanner_;
       boost::recursive_mutex planner_mutex_;
+<<<<<<< HEAD
       //条件变量？一种 锁
+=======
+>>>>>>> 152bb41a805979f892b420947acdbc10d7b9b45d
       boost::condition_variable_any planner_cond_;
       geometry_msgs::PoseStamped planner_goal_;
       boost::thread* planner_thread_;

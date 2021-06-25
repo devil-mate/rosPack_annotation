@@ -177,10 +177,18 @@ class MapServer
           exit(-1);
       }
       // To make sure get a consistent time in simulation
+<<<<<<< HEAD
+=======
+      ROS_DEBUG("Waiting for valid time (make sure use_sime_time is false or a clock server (e.g., gazebo) is running)");
+>>>>>>> 152bb41a805979f892b420947acdbc10d7b9b45d
       ros::Time::waitForValid();
       map_resp_.map.info.map_load_time = ros::Time::now();
       map_resp_.map.header.frame_id = frame_id;
       map_resp_.map.header.stamp = ros::Time::now();
+<<<<<<< HEAD
+=======
+      ROS_DEBUG("Got time");
+>>>>>>> 152bb41a805979f892b420947acdbc10d7b9b45d
       ROS_INFO("Read a %d X %d map @ %.3lf m/cell",
                map_resp_.map.info.width,
                map_resp_.map.info.height,

@@ -164,7 +164,10 @@ namespace dwa_local_planner {
 
     // set up all the cost functions that will be applied in order
     // (any function returning negative values will abort scoring, so the order can improve performance)
+<<<<<<< HEAD
     // 用一个vector容器装载所有的准则对象:
+=======
+>>>>>>> 152bb41a805979f892b420947acdbc10d7b9b45d
     std::vector<base_local_planner::TrajectoryCostFunction*> critics;
     critics.push_back(&oscillation_costs_); // discards oscillating motions (assisgns cost -1)
     critics.push_back(&obstacle_costs_); // discards trajectories that move into obstacles

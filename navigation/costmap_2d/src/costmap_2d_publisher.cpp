@@ -125,6 +125,7 @@ void Costmap2DPublisher::publishCostmap()
     return;
   }
 
+  boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
   float resolution = costmap_->getResolution();
 
   if (always_send_full_costmap_ || grid_.info.resolution != resolution ||
@@ -138,7 +139,10 @@ void Costmap2DPublisher::publishCostmap()
   }
   else if (x0_ < xn_)
   {
+<<<<<<< HEAD
     boost::unique_lock<Costmap2D::mutex_t> lock(*(costmap_->getMutex()));
+=======
+>>>>>>> 152bb41a805979f892b420947acdbc10d7b9b45d
     // Publish Just an Update
     map_msgs::OccupancyGridUpdate update;
     update.header.stamp = ros::Time::now();

@@ -553,6 +553,7 @@ bool
 SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoint& gmap_pose)
 {
   //把激光雷达的中心坐标转换到里程计坐标(得到激光雷达在里程计坐标系下的位姿)
+
   if(!getOdomPose(gmap_pose, scan.header.stamp))
      return false;
   
@@ -596,6 +597,7 @@ SlamGMapping::addScan(const sensor_msgs::LaserScan& scan, GMapping::OrientedPoin
   // need to keep our array around.
   delete[] ranges_double;
  //激光雷达地图坐标（设置到reading类成员变量中，以后用getPose获取） 
+ //用类RangeReading来记录激光扫描数据，使用RangeSensor对激光雷达建模。
   reading.setPose(gmap_pose);
 
   /*

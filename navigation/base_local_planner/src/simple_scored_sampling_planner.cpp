@@ -84,7 +84,10 @@ namespace base_local_planner {
     double loop_traj_cost, best_traj_cost = -1;
     bool gen_success;
     int count, count_valid;
+<<<<<<< HEAD
     //遍历所有的准则对象，只要有一个准则对象没有准备好就报错退出
+=======
+>>>>>>> 152bb41a805979f892b420947acdbc10d7b9b45d
     for (std::vector<TrajectoryCostFunction*>::iterator loop_critic = critics_.begin(); loop_critic != critics_.end(); ++loop_critic) {
       TrajectoryCostFunction* loop_critic_p = *loop_critic;
       if (loop_critic_p->prepare() == false) {
